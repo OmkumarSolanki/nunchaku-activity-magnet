@@ -633,6 +633,39 @@ select.field-control {
   transform: translateX(-2px);
 }
 
+.pool-forward {
+  align-items: center;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  border-radius: 999px;
+  color: #fff;
+  display: inline-flex;
+  font-family: var(--font-display), sans-serif;
+  font-size: 0.78rem;
+  font-weight: 800;
+  gap: 6px;
+  letter-spacing: 0.02em;
+  padding: 8px 16px;
+  box-shadow:
+    0 2px 12px color-mix(in srgb, var(--accent) 35%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent);
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease,
+    filter 200ms ease;
+}
+
+.pool-forward:hover {
+  transform: translateX(3px);
+  box-shadow:
+    0 4px 20px color-mix(in srgb, var(--accent) 45%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
+  filter: brightness(1.08);
+}
+
+.pool-forward:active {
+  transform: translateX(1px) scale(0.97);
+}
+
 .pool-title {
   font-family: var(--font-display), sans-serif;
   font-size: 1rem;

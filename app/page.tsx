@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useCallback, useState } from "react"
 import { ProfileCreation } from "@/components/profile-creation"
 import { MagnetPool } from "@/components/magnet-pool"
+import { ACTIVITIES, LOCATIONS } from "@/lib/constants"
 import type { UserProfile } from "@/lib/types"
 
 const CURRENT_PROFILE_STORAGE_KEY = "activity-magnets-current-profile"
@@ -39,19 +40,15 @@ function storeProfile(profile: UserProfile) {
 
 export default function Home() {
   const [currentPage, setCurrentPage] = useState<"profile" | "pool">("profile")
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(
-    getStoredProfile
-  )
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      const storedProfile = getStoredProfile()
-      if (storedProfile) {
-        setUserProfile(storedProfile)
-      }
-    }, 0)
-
-    return () => window.clearTimeout(timeout)
+    const storedProfile = getStoredProfile()
+    if (storedProfile) {
+      setUserProfile(storedProfile)
+    }
+    setHydrated(true)
   }, [])
 
   function handleJoinPool(profile: UserProfile) {
@@ -64,6 +61,28 @@ export default function Home() {
     setCurrentPage("profile")
   }
 
+  const handleBrowsePool = useCallback(() => {
+    if (userProfile) {
+      setCurrentPage("pool")
+      return
+    }
+    const guest: UserProfile = {
+      id: `guest-${crypto.randomUUID()}`,
+      name: "Guest",
+      avatarImageBase64: "",
+      activity: ACTIVITIES[0],
+      location: LOCATIONS[0].name,
+      timeStart: 6,
+      timeEnd: 24,
+      color: "#888888",
+      createdAt: Date.now(),
+    }
+    setUserProfile(guest)
+    setCurrentPage("pool")
+  }, [userProfile])
+
+  if (!hydrated) return null
+
   if (currentPage === "pool" && userProfile) {
     return <MagnetPool userProfile={userProfile} onBack={handleBack} />
   }
@@ -74,6 +93,7 @@ export default function Home() {
       initialProfile={userProfile}
       onJoinPool={handleJoinPool}
       onReturnToPool={userProfile ? () => setCurrentPage("pool") : undefined}
+      onBrowsePool={handleBrowsePool}
     />
   )
 }

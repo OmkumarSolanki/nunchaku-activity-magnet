@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Afacad_Flux, Unbounded } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const bodyFont = Afacad_Flux({
@@ -31,7 +32,9 @@ export default function RootLayout({
       className={`${bodyFont.variable} ${displayFont.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <script
+        <Script
+          id="theme-init"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `try{const t=localStorage.getItem("activity-magnets-theme");const d=t?t==="dark":window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.classList.toggle("dark",d)}catch{}`,
           }}

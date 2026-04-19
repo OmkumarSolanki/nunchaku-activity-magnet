@@ -3,6 +3,7 @@
 import { useState } from "react"
 import {
   Activity,
+  ArrowRight,
   CalendarDays,
   Clock,
   Loader2,
@@ -28,6 +29,7 @@ interface ProfileCreationProps {
   initialProfile?: UserProfile | null
   onJoinPool: (profile: UserProfile) => void
   onReturnToPool?: () => void
+  onBrowsePool?: () => void
 }
 
 interface AvatarPromptInput {
@@ -101,6 +103,7 @@ export function ProfileCreation({
   initialProfile,
   onJoinPool,
   onReturnToPool,
+  onBrowsePool,
 }: ProfileCreationProps) {
   const [name, setName] = useState(initialProfile?.name ?? "")
   const [avatarDescription, setAvatarDescription] = useState(
@@ -268,7 +271,19 @@ export function ProfileCreation({
             <span className="brand-mark" />
             Activity Magnets
           </div>
-          <ThemeToggle />
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <ThemeToggle />
+            {onBrowsePool && (
+              <button
+                type="button"
+                onClick={onBrowsePool}
+                className="pool-forward"
+              >
+                Forward
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </header>
 
         <div className="profile-grid">

@@ -256,7 +256,7 @@ export function MagnetPool({ userProfile, onBack }: MagnetPoolProps) {
               PADDING_TOP,
               height - PADDING_BOTTOM
             ),
-            clusterCount: sortedGroup.length,
+            clusterCount: exactGroup.length,
           })
         })
       })
@@ -496,7 +496,7 @@ export function MagnetPool({ userProfile, onBack }: MagnetPoolProps) {
   const hoverDetails = hoveredUser
     ? [
         { label: "Activity", value: hoveredUser.activity },
-        { label: "Gender", value: formatGender(hoveredUser.avatarGender) },
+        { label: "Location", value: hoveredUser.location },
         {
           label: "Time",
           value: `${formatTime(hoveredUser.timeStart)} - ${formatTime(
