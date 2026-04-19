@@ -36,6 +36,8 @@ const PADDING_RIGHT = 40
 const PADDING_TOP = 60
 const PADDING_BOTTOM = 148
 const CLUSTER_RADIUS = 54
+const DEFAULT_MIN_PARTICLE_DISTANCE = 90
+const TOUCHING_AVATAR_DISTANCE = 56
 const MIN_DISTANCE_STEP_WIDTH = 112
 const USER_REFRESH_INTERVAL_MS = 2_000
 
@@ -72,6 +74,15 @@ function getTargetGroupKey(profile: UserProfile): string {
   return `${profile.location}|${profile.timeStart}-${profile.timeEnd}`
 }
 
+function getExactMatchGroupKey(profile: UserProfile): string {
+  return [
+    profile.activity,
+    profile.location,
+    profile.timeStart,
+    profile.timeEnd,
+  ].join("|")
+}
+
 function getProfileSignature(profile: UserProfile): string {
   return [
     profile.id,
@@ -101,6 +112,44 @@ function getClusterOffset(index: number, count: number) {
     x: Math.cos(angle) * radius,
     y: Math.sin(angle) * radius,
   }
+}
+
+function getTouchingOffset(index: number, count: number) {
+  if (count <= 1) return { x: 0, y: 0 }
+
+  if (count === 2) {
+    return {
+      x: index === 0 ? -TOUCHING_AVATAR_DISTANCE / 2 : TOUCHING_AVATAR_DISTANCE / 2,
+      y: 0,
+    }
+  }
+
+  const slotsPerRing = 6
+  const ring = Math.floor(index / slotsPerRing)
+  const itemsBeforeRing = ring * slotsPerRing
+  const itemsInRing = Math.min(slotsPerRing, count - itemsBeforeRing)
+  const ringIndex = index - itemsBeforeRing
+  const angle = -Math.PI / 2 + (ringIndex / itemsInRing) * Math.PI * 2
+
+  const baseRadius =
+    itemsInRing <= 1
+      ? 0
+      : TOUCHING_AVATAR_DISTANCE / (2 * Math.sin(Math.PI / itemsInRing))
+  const radius = baseRadius + ring * (TOUCHING_AVATAR_DISTANCE + 10)
+
+  return {
+    x: Math.cos(angle) * radius,
+    y: Math.sin(angle) * radius,
+  }
+}
+
+function isExactMatch(p1: UserProfile, p2: UserProfile): boolean {
+  return (
+    p1.activity === p2.activity &&
+    p1.location === p2.location &&
+    p1.timeStart === p2.timeStart &&
+    p1.timeEnd === p2.timeEnd
+  )
 }
 
 export function MagnetPool({ userProfile, onBack }: MagnetPoolProps) {
@@ -173,21 +222,42 @@ export function MagnetPool({ userProfile, onBack }: MagnetPoolProps) {
           a.id.localeCompare(b.id)
       )
 
-      sortedGroup.forEach((profile, index) => {
-        const base = calcBaseTarget(profile, width, height)
-        const offset = getClusterOffset(index, sortedGroup.length)
-        targets.set(profile.id, {
-          targetX: clamp(
-            base.targetX + offset.x,
-            PADDING_LEFT,
-            width - PADDING_RIGHT
-          ),
-          targetY: clamp(
-            base.targetY + offset.y,
-            PADDING_TOP,
-            height - PADDING_BOTTOM
-          ),
-          clusterCount: sortedGroup.length,
+      const exactMatchGroups = new Map<string, UserProfile[]>()
+
+      for (const profile of sortedGroup) {
+        const key = getExactMatchGroupKey(profile)
+        const exactGroup = exactMatchGroups.get(key) ?? []
+        exactGroup.push(profile)
+        exactMatchGroups.set(key, exactGroup)
+      }
+
+      const sortedExactGroups = Array.from(exactMatchGroups.values()).sort(
+        (a, b) =>
+          a[0].createdAt - b[0].createdAt ||
+          a[0].name.localeCompare(b[0].name) ||
+          a[0].id.localeCompare(b[0].id)
+      )
+
+      sortedExactGroups.forEach((exactGroup, groupIndex) => {
+        const groupOffset = getClusterOffset(groupIndex, sortedExactGroups.length)
+
+        exactGroup.forEach((profile, index) => {
+          const base = calcBaseTarget(profile, width, height)
+          const touchOffset = getTouchingOffset(index, exactGroup.length)
+
+          targets.set(profile.id, {
+            targetX: clamp(
+              base.targetX + groupOffset.x + touchOffset.x,
+              PADDING_LEFT,
+              width - PADDING_RIGHT
+            ),
+            targetY: clamp(
+              base.targetY + groupOffset.y + touchOffset.y,
+              PADDING_TOP,
+              height - PADDING_BOTTOM
+            ),
+            clusterCount: sortedGroup.length,
+          })
         })
       })
     }
@@ -347,7 +417,9 @@ export function MagnetPool({ userProfile, onBack }: MagnetPoolProps) {
             const dist = Math.sqrt(diffX * diffX + diffY * diffY)
             if (dist < 1) continue
 
-            const minDist = 90
+            const minDist = isExactMatch(particle.profile, other.profile)
+              ? TOUCHING_AVATAR_DISTANCE
+              : DEFAULT_MIN_PARTICLE_DISTANCE
 
             if (dist < minDist) {
               const repelForce = ((minDist - dist) / minDist) * 0.4
