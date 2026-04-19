@@ -3,7 +3,6 @@
 import { useEffect, useCallback, useState } from "react"
 import { ProfileCreation } from "@/components/profile-creation"
 import { MagnetPool } from "@/components/magnet-pool"
-import { ACTIVITIES, LOCATIONS } from "@/lib/constants"
 import type { UserProfile } from "@/lib/types"
 
 const CURRENT_PROFILE_STORAGE_KEY = "activity-magnets-current-profile"
@@ -62,28 +61,12 @@ export default function Home() {
   }
 
   const handleBrowsePool = useCallback(() => {
-    if (userProfile) {
-      setCurrentPage("pool")
-      return
-    }
-    const guest: UserProfile = {
-      id: `guest-${crypto.randomUUID()}`,
-      name: "Guest",
-      avatarImageBase64: "",
-      activity: ACTIVITIES[0],
-      location: LOCATIONS[0].name,
-      timeStart: 6,
-      timeEnd: 24,
-      color: "#888888",
-      createdAt: Date.now(),
-    }
-    setUserProfile(guest)
     setCurrentPage("pool")
-  }, [userProfile])
+  }, [])
 
   if (!hydrated) return null
 
-  if (currentPage === "pool" && userProfile) {
+  if (currentPage === "pool") {
     return <MagnetPool userProfile={userProfile} onBack={handleBack} />
   }
 

@@ -27,7 +27,7 @@ interface Particle {
 }
 
 interface MagnetPoolProps {
-  userProfile: UserProfile
+  userProfile?: UserProfile | null
   onBack: () => void
 }
 
@@ -308,13 +308,14 @@ export function MagnetPool({ userProfile, onBack }: MagnetPoolProps) {
         if (!resp.ok) return
         const users: UserProfile[] = await resp.json()
 
-        // Merge: current user + all other users from server (dedup by id)
+        // Merge: current user (if present) + all other users from server (dedup by id)
         const allIds = new Set<string>()
         const allProfiles: UserProfile[] = []
 
-        // Always include current user first
-        allIds.add(userProfile.id)
-        allProfiles.push(userProfile)
+        if (userProfile) {
+          allIds.add(userProfile.id)
+          allProfiles.push(userProfile)
+        }
 
         for (const u of users) {
           if (!allIds.has(u.id)) {
@@ -629,9 +630,9 @@ export function MagnetPool({ userProfile, onBack }: MagnetPoolProps) {
             </svg>
 
             {particles.map((particle) => {
-              const isUser = particle.id === userProfile.id
+              const isUser = userProfile ? particle.id === userProfile.id : false
               const isHovered = hoveredUser?.id === particle.id
-              const similarity = calculateSimilarity(userProfile, particle.profile)
+              const similarity = userProfile ? calculateSimilarity(userProfile, particle.profile) : 0
               const zIndex = isHovered
                 ? 400
                 : selectedUser?.id === particle.id
@@ -774,7 +775,7 @@ export function MagnetPool({ userProfile, onBack }: MagnetPoolProps) {
                 Available: {formatTime(selectedUser.timeStart)} -{" "}
                 {formatTime(selectedUser.timeEnd)}
               </p>
-              {selectedUser.id !== userProfile.id && (
+              {userProfile && selectedUser.id !== userProfile.id && (
                 <div className="match-badge">
                   <span className="legend-dot" />
                   {Math.round(calculateSimilarity(userProfile, selectedUser) * 100)}
